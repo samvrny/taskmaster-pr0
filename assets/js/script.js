@@ -13,6 +13,8 @@ var createTask = function(taskText, taskDate, taskList) {
   // append span and p element to parent li
   taskLi.append(taskSpan, taskP);
 
+  //check due date
+  auditTask(taskLi);
 
   // append to ul list on the page
   $("#list-" + taskList).append(taskLi);
@@ -89,7 +91,7 @@ $(".list-group").on("blur","textarea", function() {
   $(this).replaceWith(taskP);
 });
 
-//This is to update the due date for the task
+//This is to update the due date for the task DYNAMIC DATEPICKER IS HERE!
 $(".list-group").on("click", "span", function() {
   //get current text
   var date = $(this)
@@ -105,12 +107,21 @@ $(".list-group").on("click", "span", function() {
   //swap out elements
   $(this).replaceWith(dateInput);
 
-  //automatically focus on a new element
+    //enable jQuery ui datepicker DATEPICKER HERE
+    dateInput.datepicker({
+      minDate: 1,
+      onClose: function() {
+        //when calendar is closed, force a "change" event on the dateInput
+        $(this).trigger("change");
+      }
+    });
+
+  //automatically bring up the calender
   dateInput.trigger("focus");
 });
 
 //once the value of the date was changed:
-$(".list-group").on("blur", "input[type='text']", function() {
+$(".list-group").on("change", "input[type='text']", function() {
 
   //get current text
   var date = $(this)
@@ -139,6 +150,9 @@ $(".list-group").on("blur", "input[type='text']", function() {
 
   //replace input with span element
   $(this).replaceWith(taskSpan);
+
+  //pass tasks <li> element into auditTask() to check new due date
+  auditTask($(taskSpan).closest(".list-group-item"));
 });
 
 //This makes the lists in the task master draggable list to list
@@ -214,6 +228,31 @@ $("#trash").droppable({
   }
 
 });
+
+$("#modalDueDate").datepicker({
+
+  minDate: 1
+
+});
+
+var auditTask = function(taskEl) {
+  //get date from task element
+  var date = $(taskEl).find("span").text().trim();
+
+  //convert to moment object @ 5:00 pm
+  var time = moment(date, "L").set("hour", 17);
+
+  //remove any old classes from element
+  $(taskEl).removeClass("list-group-item-warning list-group-item-danger");
+
+  //apply new class if the task is near/over due date
+  if (moment().isAfter(time)) {
+    $(taskEl).addClass("list-group-item-danger");
+  }
+  else if (Math.abs(moment().diff(time, "days")) <= 2) {
+    $(taskEl).addClass("list-group-item-warning");
+  }
+};
 //THE ABOVE IS CODE WRITTEN IN THE MODULES
 
 // modal was triggered
